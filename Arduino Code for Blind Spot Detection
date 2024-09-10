@@ -1,0 +1,72 @@
+#define TRIG_LEFT D2          // Trig pin for left sensor
+#define ECHO_LEFT D3          // Echo pin for left sensor
+#define TRIG_RIGHT D4         // Trig pin for right sensor
+#define ECHO_RIGHT D5         // Echo pin for right sensor
+#define LED_LEFT D6           // LED indicator for left side
+#define LED_RIGHT D7          // LED indicator for right side
+#define BUZZER_PIN D8         // Buzzer pin
+#define TURN_LEFT_PIN D9      // Left turn signal input
+#define TURN_RIGHT_PIN D10    // Right turn signal input
+
+const int detectionThreshold = 30;  // Distance threshold for detecting vehicles (in cm)
+
+void setup() {
+  pinMode(TRIG_LEFT, OUTPUT);
+  pinMode(ECHO_LEFT, INPUT);
+  pinMode(TRIG_RIGHT, OUTPUT);
+  pinMode(ECHO_RIGHT, INPUT);
+  pinMode(LED_LEFT, OUTPUT);
+  pinMode(LED_RIGHT, OUTPUT);
+  pinMode(BUZZER_PIN, OUTPUT);
+  pinMode(TURN_LEFT_PIN, INPUT_PULLUP);
+  pinMode(TURN_RIGHT_PIN, INPUT_PULLUP);
+
+  Serial.begin(9600);
+}
+
+void loop() {
+  int distanceLeft = measureDistance(TRIG_LEFT, ECHO_LEFT);
+  int distanceRight = measureDistance(TRIG_RIGHT, ECHO_RIGHT);
+  bool leftTurnSignal = digitalRead(TURN_LEFT_PIN) == LOW;
+  bool rightTurnSignal = digitalRead(TURN_RIGHT_PIN) == LOW;
+
+  // Left Side Detection
+  if (distanceLeft > 0 && distanceLeft < detectionThreshold) {
+    digitalWrite(LED_LEFT, HIGH);  // Turn on left LED
+    if (leftTurnSignal) {
+      triggerAlert();  // Trigger buzzer if left turn signal is on
+    }
+  } else {
+    digitalWrite(LED_LEFT, LOW);  // Turn off left LED
+  }
+
+  // Right Side Detection
+  if (distanceRight > 0 && distanceRight < detectionThreshold) {
+    digitalWrite(LED_RIGHT, HIGH);  // Turn on right LED
+    if (rightTurnSignal) {
+      triggerAlert();  // Trigger buzzer if right turn signal is on
+    }
+  } else {
+    digitalWrite(LED_RIGHT, LOW);  // Turn off right LED
+  }
+
+  delay(100);  // Adjust delay for sensor stability
+}
+
+int measureDistance(int trigPin, int echoPin) {
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  long duration = pulseIn(echoPin, HIGH);
+  int distance = duration * 0.034 / 2;  // Calculate distance in cm
+  return distance;
+}
+
+void triggerAlert() {
+  digitalWrite(BUZZER_PIN, HIGH);
+  delay(500);  // Buzzer on for 500ms
+  digitalWrite(BUZZER_PIN, LOW);
+}
